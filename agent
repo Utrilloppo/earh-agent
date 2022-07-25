@@ -1,0 +1,98 @@
+using System.Collections;
+using System.Collections.Generic;
+using UnityEngine;
+using Unity.MLAgents;
+using Unity.MLAgents.Sensors;
+using Unity.MLAgents.Actuators;
+
+public class agent : Agent
+{
+    //Maybe Agent's RidgedBody
+    public Rigidbody Rigidbody;
+    public Transform archi;
+
+
+    public Transform Bive_graund;
+
+    //BivG's Ridgedbody
+    public Rigidbody rigidbody;
+
+    float sec;
+
+
+    //float RandomVibrationVal = (float)Random.Range(1.0f, 10.0f);
+    //float RandomSwingVal = (float)Random.Range(1.0f, 10.0f);
+
+    public float RandomVibrationVal { get; private set; }
+    public float RandomSwingVal { get; private set; }
+    
+
+    public override void OnEpisodeBegin()
+    {
+        sec = 0;
+
+
+
+        RandomVibrationVal = (float)Random.Range(1.0f, 10.0f);
+        RandomSwingVal = (float)Random.Range(1.0f, 10.0f);
+        print("RandomVibrationVal: " + RandomVibrationVal);
+        print("RandomSwingVal: " + RandomSwingVal);
+
+        //base.OnEpisodeBegin();
+        rigidbody = GetComponent<Rigidbody>();
+        Rigidbody = GetComponent<Rigidbody>();
+
+
+        //duration
+    }
+
+    public override void CollectObservations(VectorSensor sensor)
+    {
+        //base.CollectObservations(sensor);
+        sensor.AddObservation(archi.localPosition); //archiのXYZ座標
+        sensor.AddObservation(this.transform.localPosition); //agentのXYZ座標
+        sensor.AddObservation(Rigidbody.velocity.x); // AgentのX速度
+
+        sensor.AddObservation(RandomSwingVal);
+        sensor.AddObservation(RandomVibrationVal);
+        sensor.AddObservation(Mathf.Sin(sec * RandomVibrationVal) * RandomSwingVal);
+    }
+
+    //行動実行時
+    public override void OnActionReceived(ActionBuffers actions)
+    {
+
+        sec += Time.deltaTime;
+
+        Vector3 pos = default;
+        pos.x = Mathf.Sin(sec * RandomVibrationVal)*RandomSwingVal;
+        rigidbody.MovePosition(pos);
+
+
+
+
+        //Agentに力を加える
+        Rigidbody.AddForce(actions.ContinuousActions[0] * 10, 0, actions.ContinuousActions[1] * 10);
+
+        //時間経過報酬
+        AddReward(0.1f);
+
+        float x = archi.eulerAngles.x;
+
+        //規定の傾きを飛び出したら
+        if (!(x < 7 && 358 <= x))
+        {
+            AddReward(-13.0f);
+            EndEpisode();
+        }
+        //時間経過報酬
+        if (Time.time > 10) {
+            AddReward(10.0f);
+            EndEpisode();
+                }
+        //base.OnActionReceived(actions);
+
+    }
+
+}
+
